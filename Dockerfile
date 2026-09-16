@@ -28,8 +28,7 @@ COPY web ./web
 COPY agent ./agent
 COPY installer ./installer
 COPY scripts ./scripts
-COPY dist ./dist
-COPY system-logs ./system-logs
+
 
 # ---------------------------------------------------------
 # Install ULPF and runtime dependencies
