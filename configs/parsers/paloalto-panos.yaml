@@ -1,0 +1,60 @@
+# Palo Alto PAN-OS traffic/threat logs (abridged CSV layout for this demo;
+# extend `columns` with the full PAN-OS field list for production feeds).
+id: paloalto-panos
+name: Palo Alto PAN-OS
+vendor: Palo Alto Networks
+product: PAN-OS
+priority: 50
+match:
+  all:
+    - regex: '^20\d\d/\d\d/\d\d \d\d:\d\d:\d\d,'
+format: csv
+format_options:
+  delimiter: ','
+  has_header: false
+  columns:
+    - generated_time
+    - serial
+    - log_type
+    - action_raw
+    - severity_raw
+    - source_ip
+    - destination_ip
+    - source_port
+    - destination_port
+    - rule
+    - application
+    - session_id
+    - bytes_in
+    - bytes_out
+    - packets
+    - user_raw
+    - src_zone
+    - dst_zone
+    - protocol_num
+    - url_category
+mapping:
+  event_time: {src: generated_time, type: timestamp}
+  source.ip: {src: source_ip, type: ip}
+  source.port: {src: source_port, type: int}
+  source.zone: {src: src_zone}
+  destination.ip: {src: destination_ip, type: ip}
+  destination.port: {src: destination_port, type: int}
+  destination.zone: {src: dst_zone}
+  network.application: {src: application}
+  network.session_id: {src: session_id}
+  network.bytes_in: {src: bytes_in, type: int}
+  network.bytes_out: {src: bytes_out, type: int}
+  network.packets: {src: packets, type: int}
+  user.name: {src: user_raw}
+taxonomy:
+  action: {src: action_raw, map: {allow: allow, deny: deny, drop: deny, reset-both: deny}}
+  type: {src: log_type, map: {TRAFFIC: connection, THREAT: alert}}
+severity:
+  src: severity_raw
+  map: {informational: info, low: low, medium: medium, high: high, critical: critical}
+constants:
+  category: network
+  vendor: Palo Alto Networks
+  device.vendor: Palo Alto Networks
+  device.product: PAN-OS

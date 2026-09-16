@@ -1,0 +1,11 @@
+id: paloalto-plugin
+name: PAN-OS ULPF Plugin
+vendor: PAN-OS
+product: PAN-OS
+version: "1.0.0"
+contract: ULPF-Plugin-v1
+formats:
+  - json
+entrypoint: parser.py
+mapping_file: mappings.yaml
+test_directory: tests

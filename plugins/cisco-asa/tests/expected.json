@@ -1,0 +1,6 @@
+{
+  "source.ip": "192.168.1.25",
+  "destination.ip": "8.8.8.8",
+  "destination.port": 443,
+  "event.action": "allow"
+}

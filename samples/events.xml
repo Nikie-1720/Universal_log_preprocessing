@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<events>
+  <event>
+    <time>2026-02-14T09:34:01Z</time>
+    <host>esx01</host>
+    <severity>warning</severity>
+    <source>vpxd</source>
+    <message>VM vm-prod-web-01 migrated to host esx02</message>
+    <vm>vm-prod-web-01</vm>
+  </event>
+  <event>
+    <time>2026-02-14T09:34:20Z</time>
+    <host>esx02</host>
+    <severity>error</severity>
+    <source>vmkernel</source>
+    <message>Storage latency exceeded threshold on datastore DS-PROD-01</message>
+    <datastore>DS-PROD-01</datastore>
+  </event>
+</events>

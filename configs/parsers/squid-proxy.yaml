@@ -1,0 +1,40 @@
+# Squid native access log
+id: squid-proxy
+name: Squid Proxy Access
+vendor: Squid
+product: Squid
+priority: 50
+match:
+  all:
+    - regex: '^\d+\.\d+\s+\d+\s+\d+\.\d+\s+TCP_'
+format: regex
+format_options:
+  patterns:
+    - '^(?P<epoch>\d+\.\d+)\s+(?P<duration_ms>\d+)\s+(?P<src_ip>[\d.]+)\s+(?P<code>\S+)/(?P<status>\d{3})\s+(?P<bytes>\d+)\s+(?P<method>\S+)\s+(?P<url>\S+)\s+(?P<user>\S+)\s+(?P<hierarchy>\S+)\s+(?P<mime>\S+)'
+mapping:
+  event_time: {src: epoch, type: timestamp}
+  source.ip: {src: src_ip, type: ip}
+  http.method: {src: method}
+  http.url: {src: url}
+  http.status_code: {src: status, type: int}
+  http.bytes: {src: bytes, type: int}
+  user.name: {src: user}
+  message: {src: code}
+derived:
+  - when: '^TCP_DENIED'
+    set:
+      action: deny
+      outcome: failure
+      category: web
+      type: http
+      severity_label: medium
+  - when: '^TCP_'
+    set:
+      action: allow
+      outcome: success
+      category: web
+      type: http
+constants:
+  vendor: Squid-Cache
+  device.vendor: Squid-Cache
+  device.product: Squid

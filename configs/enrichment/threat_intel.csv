@@ -1,0 +1,8 @@
+indicator,type,severity,source
+203.0.113.99,ip,high,ulpf-demo-feed
+198.51.100.7,ip,medium,ulpf-demo-feed
+198.51.100.23,ip,high,ulpf-demo-feed
+sqlmap,scanner,high,ulpf-demo-feed
+evil.exe,malware,high,ulpf-demo-feed
+malware-c2.example.net,c2-domain,critical,ulpf-demo-feed
+portal.example.com,phishing-domain,medium,ulpf-demo-feed

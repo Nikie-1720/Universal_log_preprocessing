@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+data/
+tests/
+docs/
+
+.github/
+*.md
+!README.md
+.git/
+.venv/
+wheelhouse/
+.env
+frontend/node_modules/
+frontend/dist/

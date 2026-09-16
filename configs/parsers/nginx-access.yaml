@@ -1,0 +1,36 @@
+# Nginx combined access log format
+id: nginx-access
+name: Nginx Access Log
+vendor: Nginx
+product: Nginx
+priority: 50
+match:
+  all:
+    - regex: '"\s+\d{3}\s+\d+\s+"'
+format: regex
+format_options:
+  patterns:
+    - '^(?P<src_ip>\S+)\s+\S+\s+(?P<user>\S+)\s+\[(?P<time>[^\]]+)\]\s+"(?P<method>\S+)\s+(?P<url>\S+)\s+(?P<proto>[^"]+)"\s+(?P<status>\d{3})\s+(?P<bytes>\d+)\s+"(?P<referrer>[^"]*)"\s+"(?P<user_agent>[^"]*)"'
+mapping:
+  event_time: {src: time, type: timestamp}
+  source.ip: {src: src_ip, type: ip}
+  user.name: {src: user}
+  http.method: {src: method}
+  http.url: {src: url}
+  http.status_code: {src: status, type: int}
+  http.bytes: {src: bytes, type: int}
+  http.referrer: {src: referrer}
+  http.user_agent: {src: user_agent}
+severity:
+  src: status
+  map: {'401': medium, '403': medium, '404': low, '429': medium, '500': high, '502': high, '503': high}
+  default: info
+derived:
+  - when: '^\d{3}'
+    set:
+      category: web
+      type: http
+constants:
+  vendor: Nginx
+  device.vendor: Nginx
+  device.product: Nginx

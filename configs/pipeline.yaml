@@ -1,0 +1,48 @@
+# ULPF default pipeline configuration
+# Paths are relative to the working directory; ${ENV} vars are expanded.
+pipeline_id: ulpf-core
+pipeline_version: "1.0.0"
+
+parser_config_dirs:
+  - configs/parsers
+
+pipeline:
+  workers: 4              # processing threads
+  queue_size: 50000       # bounded ingest queue (backpressure -> drops counted)
+  batch_size: 1000        # events per output batch
+  flush_interval: 1.0     # seconds
+  stats_interval: 10.0    # seconds between stats lines on stderr
+
+enrichment:
+  enrichers: [time, ip, geo, threat_intel, classify, severity, integrity]
+  geo_ranges_csv: configs/enrichment/geo_ranges.csv
+  threat_intel_csv: configs/enrichment/threat_intel.csv
+
+# ---- inputs -----------------------------------------------------------------
+inputs:
+  - type: syslog          # RFC3164/RFC5424 UDP+TCP receiver
+    host: 0.0.0.0
+    udp_port: 5515
+    tcp_port: 5515
+  - type: file            # tail a file with persisted offsets
+    path: samples/fortigate-kv.log
+    follow: false
+
+# ---- outputs ----------------------------------------------------------------
+outputs:
+  - type: stdout          # normalized NDJSON on stdout
+  - type: jsonl           # universal NDJSON sink for SIEM / data lake loaders
+    path: data/events.jsonl
+    rotate_size_mb: 100
+  - type: raw_archive     # WORM-style raw evidence with hash-chain manifests
+    path: data/raw
+  - type: sqlite          # queryable local store (air-gap friendly analytics)
+    path: data/events.db
+
+# Optional sinks (see README):
+#   - type: elasticsearch
+#     url: http://localhost:9200
+#     index: ulpf-events
+#   - type: kafka
+#     bootstrap_servers: localhost:9092
+#     topic: ulpf-events

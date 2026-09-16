@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07111f" />
+    <title>ULPF — Universal Log Pre-processing Framework</title>
+    <script type="module" crossorigin src="/assets/index-A0X57gKa.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Cy-P2BP5.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  
+<script>
+(function () {
+  const css = `
+  #ulpf-agent-setup-launcher{position:fixed;right:22px;bottom:22px;z-index:9999;border:1px solid rgba(101,230,187,.4);background:#0d1728;color:#e8eefc;border-radius:12px;padding:11px 14px;font:700 11px ui-monospace;cursor:pointer;box-shadow:0 15px 45px #0008}
+  #ulpf-agent-setup{position:fixed;inset:0;z-index:10000;background:#0009;display:none;align-items:center;justify-content:center;padding:18px;font-family:system-ui}
+  #ulpf-agent-setup.open{display:flex}.ulpf-as-card{width:min(760px,96vw);max-height:92vh;overflow:auto;background:#0d1728;color:#e8eefc;border:1px solid #2a3b57;border-radius:18px;box-shadow:0 30px 100px #000c}.ulpf-as-head{padding:18px 20px;border-bottom:1px solid #263750;display:flex;justify-content:space-between;gap:15px}.ulpf-as-head h2{margin:3px 0;font-size:22px}.ulpf-as-head small{color:#65e6bb;font:700 9px ui-monospace;letter-spacing:.1em}.ulpf-as-close{border:1px solid #2a3b57;background:#142238;color:#a9b6cb;border-radius:8px;width:34px;height:34px;cursor:pointer}.ulpf-as-body{padding:20px}.ulpf-as-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ulpf-as-label{display:grid;gap:6px;color:#a9b6cb;font-size:11px}.ulpf-as-label input,.ulpf-as-label select{height:40px;border:1px solid #2a3b57;border-radius:9px;background:#101d31;color:#e8eefc;padding:0 10px;box-sizing:border-box}.ulpf-as-sources{margin-top:15px;padding:13px;border:1px solid #263750;border-radius:12px;background:#101d31}.ulpf-as-sources b{font-size:12px}.ulpf-as-checks{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.ulpf-as-checks label{border:1px solid #2a3b57;border-radius:999px;padding:7px 9px;font-size:10px;color:#c9d4e6}.ulpf-as-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.ulpf-as-actions button,.ulpf-as-actions a{border:1px solid #2a3b57;background:#142238;color:#e8eefc;border-radius:9px;padding:10px 12px;text-decoration:none;font:700 11px system-ui;cursor:pointer}.ulpf-as-actions .primary{background:#65e6bb;color:#062118;border-color:#65e6bb}.ulpf-as-note{margin-top:12px;color:#8493aa;font-size:10px;line-height:1.5}.ulpf-as-output{margin-top:14px;border:1px solid #355b53;border-radius:11px;overflow:hidden}.ulpf-as-output-head{display:flex;justify-content:space-between;padding:9px 11px;border-bottom:1px solid #263750;font-size:11px}.ulpf-as-output pre{margin:0;padding:12px;white-space:pre-wrap;overflow:auto;max-height:300px;color:#a9b6cb;font:10px/1.55 ui-monospace}
+  @media(max-width:650px){.ulpf-as-grid{grid-template-columns:1fr}#ulpf-agent-setup-launcher{right:12px;bottom:12px}}
+  `;
+  const style=document.createElement('style'); style.textContent=css; document.head.appendChild(style);
+  const launcher=document.createElement('button'); launcher.id='ulpf-agent-setup-launcher'; launcher.textContent='⚙ AGENT SETUP'; document.body.appendChild(launcher);
+  const modal=document.createElement('div'); modal.id='ulpf-agent-setup'; modal.innerHTML=`
+    <div class="ulpf-as-card">
+      <div class="ulpf-as-head"><div><small>PHASE 3 • LOCAL CONFIGURATION WIZARD</small><h2>Install & connect a ULPF Agent</h2></div><button class="ulpf-as-close">×</button></div>
+      <div class="ulpf-as-body">
+        <div class="ulpf-as-grid">
+          <label class="ulpf-as-label">Target OS<select id="ulpf-as-os"><option value="windows">Windows x64</option><option value="linux">Linux x64</option></select></label>
+          <label class="ulpf-as-label">Agent name<input id="ulpf-as-name" placeholder="HOST-ULPF-01"></label>
+          <label class="ulpf-as-label">Private ULPF gateway<input id="ulpf-as-gateway"></label>
+          <label class="ulpf-as-label">Agent token<input id="ulpf-as-token" type="password" placeholder="Optional on trusted air-gap"></label>
+        </div>
+        <div class="ulpf-as-sources"><b>Local sources</b><div id="ulpf-as-checks" class="ulpf-as-checks"></div></div>
+        <div class="ulpf-as-actions"><a href="/api/agent-plugin/download">↓ Download Agent Plugin</a><button class="primary" id="ulpf-as-generate">Generate local agent.yaml</button><button id="ulpf-as-copy" style="display:none">Copy config</button></div>
+        <div class="ulpf-as-note">Air-gap mode: this wizard runs locally in the ULPF console. The generated file is not uploaded anywhere. The agent only forwards telemetry to the gateway you configure.</div>
+        <div id="ulpf-as-output" class="ulpf-as-output" style="display:none"><div class="ulpf-as-output-head"><b>Generated locally</b><span id="ulpf-as-status">Ready</span></div><pre id="ulpf-as-pre"></pre></div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const os=modal.querySelector('#ulpf-as-os'), name=modal.querySelector('#ulpf-as-name'), gateway=modal.querySelector('#ulpf-as-gateway'), token=modal.querySelector('#ulpf-as-token'), checks=modal.querySelector('#ulpf-as-checks'), output=modal.querySelector('#ulpf-as-output'), pre=modal.querySelector('#ulpf-as-pre'), copy=modal.querySelector('#ulpf-as-copy');
+  gateway.value=location.origin;
+  function renderChecks(){
+    const list=os.value==='windows'?['System','Application','Security','Microsoft-Windows-PowerShell/Operational']:['/var/log/syslog','/var/log/messages','/var/log/auth.log','/var/log/secure','/var/log/audit/audit.log'];
+    checks.innerHTML=list.map((x,i)=>`<label><input type="checkbox" value="${x.replace(/"/g,'&quot;')}" ${i<3?'checked':''}> ${x}</label>`).join('');
+  }
+  function yaml(){
+    const selected=[...checks.querySelectorAll('input:checked')].map(x=>x.value);
+    const q=v=>`"${String(v||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"')}"`;
+    const lines=['# Generated locally by ULPF Agent Setup','# AIR-GAPPED: no cloud endpoint or external service is configured.',`gateway: ${q(gateway.value)}`,`token: ${q(token.value)}`,`name: ${q(name.value)}`,'spool: "state/spool.db"','offset_file: "state/offsets.json"','files:'];
+    if(os.value==='windows') lines.push('  []'); else selected.forEach(x=>lines.push('  - '+x));
+    lines.push('directories: []',`journald: ${os.value==='linux'}`,`windows_eventlog: ${os.value==='windows'}`,'windows_channels:');
+    if(os.value==='windows') selected.forEach(x=>lines.push(`  - ${q(x)}`)); else lines.push('  []');
+    lines.push('poll_interval: 2','windows_poll_interval: 5','send_interval: 0.5','batch_size: 100','heartbeat_interval: 10');
+    return lines.join('\n')+'\n';
+  }
+  function download(){const text=yaml(); const blob=new Blob([text],{type:'text/yaml'}); const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u;a.download='agent.yaml';a.click();URL.revokeObjectURL(u);pre.textContent=text;output.style.display='block';copy.style.display='inline-block';}
+  launcher.onclick=()=>modal.classList.add('open'); modal.querySelector('.ulpf-as-close').onclick=()=>modal.classList.remove('open'); modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')}); os.onchange=renderChecks; modal.querySelector('#ulpf-as-generate').onclick=download; copy.onclick=()=>navigator.clipboard?.writeText(pre.textContent);
+  renderChecks();
+})();
+</script>
+
+  </body>
+</html>

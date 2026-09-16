@@ -1,0 +1,23 @@
+{
+  "analysis": {
+    "engine": "offline-heuristic-v1",
+    "mode": "offline-assisted",
+    "network_access_required": false,
+    "suggestions": [],
+    "unknown_fields": [
+      "TIME",
+      "CLIENT",
+      "SERVER",
+      "SP",
+      "DP",
+      "VERDICT"
+    ]
+  },
+  "created_at": "2026-09-12T16:09:24Z",
+  "lifecycle": "DRAFT",
+  "network_access_required": false,
+  "offline": true,
+  "parser_sha256": "105f5486ad1a0f7b3c31d4634004eeac73dbc3a114be800902399ee6cfc640fd",
+  "plugin_id": "demo-ai-fw",
+  "sample_sha256": "eed567fd906a792e5229c4f2d176305d968a2361e9b251f0964daab5d8b66efa"
+}

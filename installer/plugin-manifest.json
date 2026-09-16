@@ -1,0 +1,26 @@
+{
+  "product": "ULPF Agent Plugin",
+  "version": "1.1.0",
+  "publisher": "ULPF Project",
+  "description": "Universal local log collection and secure registration plugin for ULPF",
+  "platforms": [
+    "windows-x64",
+    "linux-x64"
+  ],
+  "entrypoints": {
+    "windows": "scripts/install-ulpf-agent-windows.ps1",
+    "linux": "scripts/install-ulpf-agent-linux.sh"
+  },
+  "capabilities": [
+    "agent-registration",
+    "automatic-source-discovery",
+    "capability-reporting",
+    "configuration-wizard",
+    "heartbeat",
+    "local-buffering",
+    "os-detection",
+    "raw-event-forwarding",
+    "source-discovery"
+  ],
+  "offline": true
+}

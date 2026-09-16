@@ -1,0 +1,3 @@
+{"timestamp":"2026-09-12T20:30:01Z","src_ip":"10.10.10.25","dst_ip":"192.168.1.10","src_port":44321,"dst_port":22,"protocol":"TCP","action":"DENY","username":"admin","message":"SSH connection blocked"}
+{"timestamp":"2026-09-12T20:30:04Z","src_ip":"10.10.10.25","dst_ip":"192.168.1.10","src_port":44322,"dst_port":22,"protocol":"TCP","action":"DENY","username":"admin","message":"SSH connection blocked"}
+{"timestamp":"2026-09-12T20:30:07Z","src_ip":"10.10.10.25","dst_ip":"192.168.1.10","src_port":44323,"dst_port":22,"protocol":"TCP","action":"DENY","username":"admin","message":"SSH connection blocked"}

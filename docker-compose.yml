@@ -1,0 +1,149 @@
+# ULPF one-command deployment.
+# Core + web console + PostgreSQL.
+#
+# Start:
+#   docker compose up --build
+#
+# Open:
+#   http://localhost:5173
+#
+# PostgreSQL:
+#   Host: localhost
+#   Port: 5432
+#   Database: ulpf
+#   User: ulpf
+#
+# Inside Docker, ULPF connects to:
+#   postgres:5432
+
+services:
+
+  # ============================================================
+  # ULPF CORE + WEB CONSOLE
+  # ============================================================
+  ulpf:
+    build: .
+    image: ulpf:2.0.0
+    container_name: ulpf
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    ports:
+      - "5173:5173"
+      - "5514:5514/udp"
+      - "5514:5514/tcp"
+
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./samples:/app/samples:ro
+      - ./system-logs:/app/system-logs:ro
+      - ulpf-data:/data
+
+      # Optional Linux host log visibility:
+      # - /var/log:/host-logs:ro
+
+    environment:
+      ULPF_WEB_PORT: "5173"
+      ULPF_CONFIG: /app/configs/pipeline.yaml
+      ULPF_AGENT_TOKEN: ${ULPF_AGENT_TOKEN:-Tnikita1800}
+
+      # --------------------------------------------------------
+      # PostgreSQL connection
+      # --------------------------------------------------------
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: ${POSTGRES_DB:-ulpf}
+      DATABASE_USER: ${POSTGRES_USER:-ulpf}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env or the shell}
+
+    restart: unless-stopped
+
+
+  # ============================================================
+  # POSTGRESQL - CENTRAL ULPF DATABASE
+  # ============================================================
+  postgres:
+    image: postgres:16
+    container_name: ulpf-postgres
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ulpf}
+      POSTGRES_USER: ${POSTGRES_USER:-ulpf}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env or the shell}
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+    restart: unless-stopped
+
+
+  # ============================================================
+  # ELASTICSEARCH - OPTIONAL
+  # ============================================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    profiles: ["es"]
+
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+
+    ports:
+      - "9200:9200"
+
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+
+  # ============================================================
+  # KAFKA - OPTIONAL
+  # ============================================================
+  kafka:
+    image: bitnami/kafka:3.6
+    profiles: ["kafka"]
+
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+
+    ports:
+      - "9092:9092"
+
+    volumes:
+      - kafka-data:/bitnami/kafka
+
+
+# ==============================================================
+# PERSISTENT VOLUMES
+# ==============================================================
+volumes:
+
+  # ULPF raw logs + application data
+  ulpf-data:
+
+  # PostgreSQL database
+  postgres-data:
+
+  # Optional Elasticsearch
+  es-data:
+
+  # Optional Kafka
+  kafka-data:

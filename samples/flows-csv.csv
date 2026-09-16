@@ -1,0 +1,4 @@
+timestamp,source_ip,source_port,dest_ip,dest_port,protocol,action,bytes_sent,bytes_received,user,rule
+2026-02-14T09:33:01Z,192.168.1.20,50101,93.184.216.34,443,TCP,allow,1024,20480,jsmith,web-out
+2026-02-14T09:33:15Z,203.0.113.77,44122,192.168.1.1,22,TCP,deny,0,0,,mgmt-in
+2026-02-14T09:33:40Z,192.168.1.31,50155,198.51.100.23,80,TCP,allow,512,4096,asmith,web-out

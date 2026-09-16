@@ -1,0 +1,55 @@
+# Cisco ASA / FTD firewall messages (%ASA-sev-id: ...)
+id: cisco-asa
+name: Cisco ASA Firewall
+vendor: Cisco
+product: ASA
+priority: 50
+match:
+  any:
+    - regex: '%ASA-\d+-\d+:'
+format: regex
+format_options:
+  patterns:
+    - '^(?:<(?P<pri>\d{1,3})>)?(?P<date>\w{3}\s+\d{1,2}\s+\d{4})\s+(?P<clock>\d{2}:\d{2}:\d{2}):\s+%ASA-(?P<level>\d)-(?P<msgid>\d+):\s+(?P<msg>.*)$'
+mapping:
+  event_time: {template: '{date} {clock}', type: timestamp}
+  message: {src: msg}
+  network.session_id: {src: msgid}
+derived:
+  - when: '^Built (?P<dir>inbound|outbound) (?P<proto>TCP|UDP) connection (?P<conn>\d+) for'
+    set:
+      network.direction: {value: dir, type: lower}
+      network.transport: {value: proto, type: proto}
+      network.session_id: {value: conn}
+      action: allow
+      type: connection
+  - when: 'for (?P<dzone>[A-Z]+):(?P<dip>[\d.]+)/(?P<dport>\d+)'
+    set:
+      destination.ip: {value: dip, type: ip}
+      destination.port: {value: dport, type: int}
+      destination.zone: {value: dzone, type: lower}
+  - when: 'to (?P<szone>[A-Z]+):(?P<sip>[\d.]+)/(?P<sport>\d+)'
+    set:
+      source.ip: {value: sip, type: ip}
+      source.port: {value: sport, type: int}
+      source.zone: {value: szone, type: lower}
+  - when: '^Deny (?P<proto>TCP|UDP|ICMP) src (?P<szone>\w+):(?P<sip>[\d.]+)/(?P<sport>\d+) dst (?P<dzone>\w+):(?P<dip>[\d.]+)/(?P<dport>\d+)'
+    set:
+      source.ip: {value: sip, type: ip}
+      source.port: {value: sport, type: int}
+      source.zone: {value: szone, type: lower}
+      destination.ip: {value: dip, type: ip}
+      destination.port: {value: dport, type: int}
+      destination.zone: {value: dzone, type: lower}
+      network.transport: {value: proto, type: proto}
+      action: deny
+      type: policy
+      outcome: failure
+severity:
+  src: level
+  map: {'0': critical, '1': critical, '2': critical, '3': high, '4': medium, '5': info, '6': info, '7': debug}
+constants:
+  category: network
+  vendor: Cisco
+  device.vendor: Cisco
+  device.product: ASA

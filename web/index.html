@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ULPF — Universal Log Pre-processing Framework</title>
+<style>
+:root{--bg:#07111f;--panel:#0d1a2b;--panel2:#101f33;--text:#e9f1fb;--muted:#91a5bd;--line:#21344c;--accent:#63e6be;--accent2:#74a9ff;--danger:#ff7b8a;--shadow:0 18px 50px #0004}
+[data-theme="light"]{--bg:#f4f7fb;--panel:#fff;--panel2:#f8fafc;--text:#132033;--muted:#607086;--line:#dbe3ee;--accent:#087f63;--accent2:#245fb5;--danger:#c83d50;--shadow:0 12px 35px #17304d16}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+button,textarea,select{font:inherit}button{cursor:pointer}
+.top{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px);z-index:5}
+.brand{display:flex;gap:12px;align-items:center}.logo{width:38px;height:38px;border:1px solid var(--accent);border-radius:11px;display:grid;place-items:center;color:var(--accent);font-weight:800}.brand b{font-size:17px}.brand small{display:block;color:var(--muted)}
+.actions{display:flex;gap:8px}.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:9px;padding:9px 13px}.btn.primary{background:var(--accent);color:#062118;border-color:var(--accent);font-weight:800}.btn.ghost{background:transparent}
+.wrap{max-width:1500px;margin:auto;padding:24px 28px}.hero{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:20px}.hero h1{font-size:28px;margin:0 0 5px}.hero p{margin:0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,.7fr);gap:18px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}.cardhead{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.eyebrow{font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:800}.card h2{font-size:17px;margin:3px 0 0}.body{padding:18px}
+textarea{width:100%;min-height:180px;resize:vertical;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;outline:none}textarea:focus{border-color:var(--accent)}
+.controls{display:flex;gap:10px;align-items:center;margin-top:11px;flex-wrap:wrap}.select{background:var(--bg);color:var(--text);border:1px solid var(--line);padding:9px;border-radius:9px;max-width:250px}
+.status{margin-top:12px;min-height:21px;color:var(--muted)}.status.error{color:var(--danger)}.status.ok{color:var(--accent)}
+.principles{display:grid;gap:10px}.principle{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel2)}.principle b{display:block;margin-bottom:3px}.principle span{color:var(--muted);font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:12px}.stat b{font-size:20px}.stat span{display:block;color:var(--muted);font-size:11px}
+.section{margin-top:20px}.events{display:grid;gap:12px}.event{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}.eventhead{display:flex;justify-content:space-between;gap:12px;padding:13px 15px;border-bottom:1px solid var(--line)}.eventtitle{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pill{border:1px solid var(--line);padding:3px 7px;border-radius:99px;font-size:10px;color:var(--muted)}.pill.pass{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}.fields{padding:12px 15px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}.field{border:1px solid var(--line);border-radius:9px;padding:9px;background:var(--panel2);transition:.15s}.field:hover{border-color:var(--accent);transform:translateY(-1px)}.field small{display:block;color:var(--muted);font-size:10px}.field strong{font-family:ui-monospace,monospace;font-size:12px;word-break:break-word}.field button{all:unset;display:block;width:100%;cursor:pointer}
+.eventfoot{padding:10px 15px;background:var(--panel2);display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:11px}.mono{font-family:ui-monospace,monospace}
+.drawer{position:fixed;right:0;top:0;height:100%;width:min(570px,94vw);background:var(--panel);border-left:1px solid var(--line);box-shadow:-20px 0 60px #0005;transform:translateX(105%);transition:.25s;z-index:10;overflow:auto}.drawer.open{transform:none}.drawerhead{position:sticky;top:0;background:var(--panel);padding:17px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}.lineage{padding:17px}.raw{white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line);padding:12px;border-radius:9px;font:11px/1.55 ui-monospace,monospace}.chain{display:grid;gap:8px;margin:12px 0}.chainitem{border:1px solid var(--line);border-radius:9px;padding:10px}.chainitem b{color:var(--accent)}.empty{padding:35px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.footer{margin:30px 0;color:var(--muted);font-size:12px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.wrap{padding:18px 14px}.top{padding:0 14px}.hero{display:block}.hero .actions{margin-top:12px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="logo">U</div><div><b>ULPF Console</b><small>Universal Log Pre-processing Framework</small></div></div>
+  <div class="actions"><button class="btn ghost" id="systemBtn">Normalize system logs</button><button class="btn" id="themeBtn">☀ / ☾</button></div>
+</header>
+<main class="wrap">
+  <div class="hero"><div><div class="eyebrow">LOSSLESS • EXPLAINABLE • PLUGIN-NATIVE</div><h1>One standard for every signal.</h1><p>Preserve raw evidence, normalize vendor fields, validate quality, and trace every value to its source.</p></div></div>
+  <div class="grid">
+    <section class="card">
+      <div class="cardhead"><div><div class="eyebrow">INGEST</div><h2>Drop in raw logs</h2></div><span class="pill">Syslog / JSON / CEF / LEEF / KV / XML / CSV</span></div>
+      <div class="body">
+        <textarea id="raw" placeholder="Paste one or more raw log lines here..."></textarea>
+        <div class="controls">
+          <select class="select" id="sample">
+            <option value="">Load a sample…</option>
+            <option value="forti">FortiGate traffic</option>
+            <option value="cisco">Cisco ASA</option>
+            <option value="cef">CEF firewall</option>
+            <option value="json">JSON application</option>
+            <option value="syslog">SSH/system syslog</option>
+          </select>
+          <button class="btn" id="clear">Clear</button>
+          <span id="count" class="pill">0 lines</span>
+          <button class="btn primary" id="normalize">▶ Normalize events</button>
+        </div>
+        <div id="status" class="status"></div>
+      </div>
+    </section>
+    <aside class="card">
+      <div class="cardhead"><div><div class="eyebrow">WHY ULPF</div><h2>Four evaluator hooks</h2></div></div>
+      <div class="body principles">
+        <div class="principle"><b>① Forensic traceability</b><span>Click a normalized field to see source field, mapping, extraction method, confidence and raw evidence.</span></div>
+        <div class="principle"><b>② Air-gap ready</b><span>Core processing uses Python standard library and local data. No cloud API is required.</span></div>
+        <div class="principle"><b>③ Formal plugin contract</b><span>Vendor parsers are registered as versioned ULPF plugins with mappings and tests.</span></div>
+        <div class="principle"><b>④ Don't replace — augment</b><span>Emit a universal event that can feed an existing SIEM, data lake or AI/ML system.</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="nEvents">0</b><span>events in console</span></div>
+    <div class="stat"><b id="nPass">0</b><span>parsed successfully</span></div>
+    <div class="stat"><b id="nThreat">0</b><span>threat matches</span></div>
+    <div class="stat"><b id="nPlugins">0</b><span>registered plugins</span></div>
+  </div>
+
+  <section class="section">
+    <div class="card">
+      <div class="cardhead"><div><div class="eyebrow">NORMALIZED EVENTS</div><h2>Universal event stream</h2></div><button class="btn" id="refresh">Refresh</button></div>
+      <div class="body"><div id="events" class="events"><div class="empty">Load a sample or paste logs above, then run the pipeline.</div></div></div>
+    </div>
+  </section>
+  <div class="footer">ULPF demo console • deterministic local preprocessing • raw evidence is retained with SHA-256 integrity metadata.</div>
+</main>
+
+<aside class="drawer" id="drawer">
+  <div class="drawerhead"><div><div class="eyebrow">FORENSIC TRACEABILITY</div><b id="drawerTitle">Field lineage</b></div><button class="btn" id="closeDrawer">Close</button></div>
+  <div class="lineage" id="drawerBody"></div>
+</aside>
+
+<script>
+const samples={
+forti:`date=2026-09-09 time=18:10:32 devname="FW-01" devid="FG100F3X21000001" type="traffic" subtype="forward" level="notice" srcip=192.168.1.25 srcport=51542 srcintf="LAN" dstip=8.8.8.8 dstport=443 dstintf="WAN" proto=6 action="accept" service="HTTPS" policyid=12 sentbyte=1240 rcvdbyte=5820`,
+cisco:`%ASA-6-302013: Built outbound TCP connection 12345 for inside:192.168.1.25/51542 to outside:8.8.8.8/443`,
+cef:`CEF:0|DemoFirewall|EdgeGate|1.0|100|Outbound connection|5|src=192.168.1.25 dst=8.8.8.8 spt=51542 dpt=443 proto=TCP act=allow`,
+json:`{"timestamp":"2026-09-09T18:10:32Z","src_ip":"192.168.1.25","dst_ip":"8.8.8.8","dst_port":443,"action":"allow","service":"HTTPS","user":"alice"}`,
+syslog:`Sep  9 18:10:32 host sshd[1204]: Failed password for user alice from 192.168.1.25 port 51542 ssh2`
+};
+const $=id=>document.getElementById(id);
+async function api(url,opts={}){
+  const r=await fetch(url,{...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}});
+  const text=await r.text();
+  let data={}; try{data=text?JSON.parse(text):{}}catch(e){throw new Error(`Server returned invalid JSON (${r.status})`)}
+  if(!r.ok) throw new Error(data.error||`Request failed (${r.status})`);
+  return data;
+}
+function setStatus(msg,kind=''){ $('status').textContent=msg; $('status').className='status '+kind; }
+function updateCount(){const lines=$('raw').value.split(/\\r?\\n/).filter(x=>x.trim()).length;$('count').textContent=`${lines} line${lines===1?'':'s'}`}
+$('raw').addEventListener('input',updateCount);
+$('sample').onchange=e=>{if(e.target.value){$('raw').value=samples[e.target.value]||'';updateCount();setStatus('Sample loaded. Click Normalize events.','ok')}};
+$('clear').onclick=()=>{$('raw').value='';updateCount();setStatus('')};
+$('themeBtn').onclick=()=>{const next=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';document.documentElement.setAttribute('data-theme',next);localStorage.ulpfTheme=next};
+if(localStorage.ulpfTheme)document.documentElement.setAttribute('data-theme',localStorage.ulpfTheme);
+$('normalize').onclick=async()=>{
+ const raw=$('raw').value.trim(); if(!raw)return setStatus('Paste a log or load a sample first.','error');
+ $('normalize').disabled=true;setStatus('Processing…');
+ try{const d=await api('/api/normalize',{method:'POST',body:JSON.stringify({raw})});setStatus(`${d.count} event(s) normalized successfully.`,'ok');await refreshEvents()}catch(e){setStatus(e.message,'error')}finally{$('normalize').disabled=false}
+};
+$('systemBtn').onclick=async()=>{
+ $('systemBtn').disabled=true;setStatus('Reading available system log files…');
+ try{const d=await api('/api/normalize-system',{method:'POST',body:JSON.stringify({limit:100})});setStatus(`${d.count} system event(s) normalized from mounted/local log files.`,'ok');await refreshEvents()}catch(e){setStatus(e.message,'error')}finally{$('systemBtn').disabled=false}
+};
+$('refresh').onclick=refreshEvents;
+$('closeDrawer').onclick=()=>{$('drawer').classList.remove('open')};
+async function refreshEvents(){
+ try{
+  const [ev,pl]=await Promise.all([api('/api/events'),api('/api/plugins')]);
+  $('nEvents').textContent=ev.count;$('nPass').textContent=ev.events.filter(e=>e.meta?.parse_status==='parsed').length;
+  $('nThreat').textContent=ev.events.filter(e=>(e.ues?.threat?.matched||[]).length).length;$('nPlugins').textContent=pl.plugins.length;
+  renderEvents(ev.events);
+ }catch(e){setStatus(e.message,'error')}
+}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function flatFields(obj,prefix=''){let out=[];for(const [k,v] of Object.entries(obj||{})){const p=prefix?`${prefix}.${k}`:k;if(v&&typeof v==='object'&&!Array.isArray(v))out.push(...flatFields(v,p));else if(!['schema_version','event_id','ingest_time','event_time_epoch_ms','tags','labels'].includes(p))out.push([p,v])}return out}
+function renderEvents(events){
+ if(!events.length){$('events').innerHTML='<div class="empty">No normalized events yet.</div>';return}
+ $('events').innerHTML=events.map((e,i)=>{
+  const u=e.ues||{}, t=e.trace||{}, fields=flatFields(u).slice(0,18);
+  const status=e.meta?.parse_status==='parsed';
+  return `<article class="event"><div class="eventhead"><div class="eventtitle"><b>#${events.length-i}</b><span class="pill">${esc(e.meta?.parser)}</span><span class="pill">${esc(e.meta?.format)}</span><span class="pill ${status?'pass':''}">${status?'PASS':'FAILED'}</span></div><span class="pill mono">${esc(t.trace_id)}</span></div>
+  <div class="fields">${fields.map(([k,v])=>`<div class="field"><button data-trace="${esc(t.trace_id)}" data-field="${esc(k)}"><small>${esc(k)}</small><strong>${esc(typeof v==='object'?JSON.stringify(v):v)}</strong></button></div>`).join('')}</div>
+  <div class="eventfoot"><span>vendor: ${esc(u.device?.vendor||u.vendor||'—')}</span><span>source: ${esc(u.source?.ip||'—')}</span><span>destination: ${esc(u.destination?.ip||'—')}:${esc(u.destination?.port||'—')}</span><span>SHA-256: ${esc((t.raw_hash||'').slice(0,18))}…</span></div></article>`
+ }).join('');
+ document.querySelectorAll('.field button').forEach(b=>b.onclick=()=>showLineage(b.dataset.trace,b.dataset.field));
+}
+async function showLineage(trace,field){
+ $('drawerTitle').textContent=field;$('drawerBody').innerHTML='<div class="empty">Loading lineage…</div>';$('drawer').classList.add('open');
+ try{const d=await api(`/api/events/${encodeURIComponent(trace)}/lineage`);
+  const hits=(d.lineage||[]).filter(x=>x.normalized_field===field);
+  $('drawerBody').innerHTML=`<h3>Normalized field</h3><div class="chain"><div class="chainitem"><b>${esc(field)}</b><br>${esc(hits[0]?.normalized_value??'')}</div>${hits.length?hits.map(x=>`<div class="chainitem"><b>Original field:</b> ${esc(x.original_field)}<br><b>Original value:</b> ${esc(x.original_value)}<br><b>Mapping:</b> ${esc(x.mapping_rule)}<br><b>Extraction:</b> ${esc(x.extraction_method)}<br><b>Confidence:</b> ${Math.round((x.confidence??0)*100)}%<br><b>Parser:</b> ${esc(x.parser)}</div>`).join(''):'<div class="chainitem">No explicit mapping lineage recorded for this field.</div>'}<div class="chainitem"><b>Raw event SHA-256</b><br><span class="mono">${esc(d.raw_hash)}</span></div></div><h3>Exact original event</h3><div class="raw">${esc(d.raw)}</div>`;
+ }catch(e){$('drawerBody').innerHTML=`<div class="empty">${esc(e.message)}</div>`}
+}
+refreshEvents();
+</script>
+</body>
+</html>

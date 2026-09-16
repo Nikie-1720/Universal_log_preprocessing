@@ -1,0 +1,11 @@
+id: fortinet-plugin
+name: FortiGate ULPF Plugin
+vendor: Fortinet
+product: FortiGate
+version: "1.0.0"
+contract: ULPF-Plugin-v1
+formats:
+  - kv
+entrypoint: parser.py
+mapping_file: mappings.yaml
+test_directory: tests

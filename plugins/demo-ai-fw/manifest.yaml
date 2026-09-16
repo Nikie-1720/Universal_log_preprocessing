@@ -1,0 +1,10 @@
+id: "demo-ai-fw"
+name: "Demo Ai Fw"
+version: "1.0.0"
+entrypoint: "parser.py"
+mapping_file: "mappings.yaml"
+parser_config: "parser.yaml"
+test_directory: "tests"
+contract: "ULPF-Plugin-v1"
+offline: true
+activation: "human-approval-required"

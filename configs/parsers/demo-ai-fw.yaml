@@ -1,0 +1,54 @@
+id: demo-ai-fw
+name: Demo AI Firewall
+vendor: DemoVendor
+product: AI-Assisted Firewall
+priority: 90
+
+match:
+  any:
+    - contains: 'TIME='
+
+format: kv
+
+format_options: {}
+
+mapping:
+  event_time:
+    src: TIME
+    type: timestamp
+
+  source.ip:
+    src: CLIENT
+    type: ip
+
+  destination.ip:
+    src: SERVER
+    type: ip
+
+  source.port:
+    src: SP
+    type: int
+
+  destination.port:
+    src: DP
+    type: int
+
+taxonomy:
+  action:
+    src: VERDICT
+    map:
+      ALLOW: allow
+      ACCEPT: allow
+      PERMIT: allow
+      DENY: deny
+      DROP: deny
+      BLOCK: deny
+
+  type:
+    value: network_connection
+
+constants:
+  category: network
+  vendor: DemoVendor
+  device.vendor: DemoVendor
+  device.product: AI-Assisted Firewall

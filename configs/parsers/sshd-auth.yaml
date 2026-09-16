@@ -1,0 +1,41 @@
+# OpenSSH authentication messages (Accepted/Failed password, etc.)
+id: sshd-auth
+name: OpenSSH Auth
+vendor: OpenSSH
+product: sshd
+priority: 50
+match:
+  all:
+    - regex: 'sshd\[\d+\]:'
+format: regex
+format_options:
+  patterns:
+    - '^(?:<(?P<pri>\d{1,3})>)?(?P<ts>\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<hostname>\S+)\s+sshd\[(?P<pid>\d+)\]:\s+(?P<msg>.*)$'
+mapping:
+  event_time: {src: ts, type: timestamp}
+  device.host: {src: hostname}
+  process.pid: {src: pid, type: int}
+  message: {src: msg}
+derived:
+  - when: 'Failed password for (?:invalid user )?(?:user )?(?P<user>\S+) from (?P<src>[\d.]+) port (?P<sport>\d+)'
+    set:
+      source.ip: {value: src, type: ip}
+      source.port: {value: sport, type: int}
+      user.name: {value: user}
+      action: deny
+      outcome: failure
+      category: authentication
+      type: login
+      severity_label: medium
+  - when: 'Accepted (?P<method>password|publickey) for (?P<user>\S+) from (?P<src>[\d.]+) port (?P<sport>\d+)'
+    set:
+      source.ip: {value: src, type: ip}
+      source.port: {value: sport, type: int}
+      user.name: {value: user}
+      action: allow
+      outcome: success
+      category: authentication
+      type: login
+constants:
+  vendor: OpenSSH
+  device.vendor: OpenSSH

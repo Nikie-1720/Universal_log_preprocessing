@@ -1,0 +1,42 @@
+# FortiGate traffic / UTM logs (key=value inside optional syslog PRI envelope)
+id: fortigate-traffic
+name: FortiGate Traffic & UTM
+vendor: Fortinet
+product: FortiGate
+priority: 50
+match:
+  all:
+    - contains: 'srcip='
+    - contains: 'dstip='
+format: kv
+format_options: {}
+mapping:
+  event_time: {template: '{date} {time}', type: timestamp, method: 'date+time template', confidence: 1.0}
+  device.host: {src: devname}
+  device.product: {src: devid}
+  source.ip: {src: srcip, type: ip}
+  source.port: {src: srcport, type: int}
+  source.zone: {src: srcintf}
+  destination.ip: {src: dstip, type: ip}
+  destination.port: {src: dstport, type: int}
+  destination.zone: {src: dstintf}
+  destination.service: {src: service}
+  network.transport: {src: proto, type: proto}
+  network.session_id: {src: sessionid}
+  network.bytes_out: {src: sentbyte, type: int}
+  network.bytes_in: {src: rcvdbyte, type: int}
+  network.duration: {src: duration, type: float}
+  user.name: {src: user}
+  http.host: {src: hostname}
+  message: {src: msg}
+taxonomy:
+  action: {src: action, map: {accept: allow, permit: allow, start: allow, deny: deny, block: deny, ip-conn: allow}}
+  type: {src: subtype}
+severity:
+  src: level
+  map: {informational: info, notification: info, notice: info, warning: medium, error: high, critical: critical, alert: high, emergency: critical}
+constants:
+  category: network
+  vendor: Fortinet
+  device.vendor: Fortinet
+  device.product: FortiGate

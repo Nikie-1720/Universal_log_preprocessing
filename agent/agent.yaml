@@ -1,0 +1,102 @@
+# ============================================================
+# ULPF UNIVERSAL AGENT CONFIGURATION
+# Same configuration works on Windows + Linux
+# The agent automatically enables OS-appropriate collectors.
+# ============================================================
+
+gateway: "http://127.0.0.1:5174"
+
+# Optional TLS/mTLS. HTTPS always verifies the gateway certificate by default.
+# tls:
+#   ca_file: "/etc/ulpf/ca.pem"
+#   cert_file: "/etc/ulpf/agent.crt"
+#   key_file: "/etc/ulpf/agent.key"
+#   insecure_skip_verify: false
+
+# Optional authentication.
+# If ULPF_AGENT_TOKEN is configured on the server,
+# set the same token through the environment variable.
+token: "Tnikita1800"
+
+# Leave empty for automatic hostname-based agent name.
+name: ""
+
+# Persistent local spool and checkpoints.
+spool: "state/spool.db"
+offset_file: "state/offsets.json"
+
+# ============================================================
+# FILE LOG COLLECTION
+# ============================================================
+# These paths are checked only if they exist.
+# Therefore the same config can run on Windows and Linux.
+#
+# Linux examples:
+# /var/log/syslog
+# /var/log/messages
+# /var/log/auth.log
+# /var/log/secure
+# /var/log/audit/audit.log
+
+files:
+  - /var/log/syslog
+  - /var/log/messages
+  - /var/log/auth.log
+  - /var/log/secure
+  - /var/log/audit/audit.log
+
+# Recursive application/custom log discovery.
+# Add directories where applications store logs.
+#
+# Example:
+# directories:
+#   - path: /var/log
+#     pattern: "*.log"
+
+directories:
+  - path: "C:/Users/NIKITA/Downloads/ULPF-SIH-FINAL-AIRGAPPED-v2.0.0/samples/demo"
+    pattern: "*.log"
+
+# ============================================================
+# LINUX JOURNALD
+# ============================================================
+# On Linux:
+#   true  = collect systemd journal
+#
+# On Windows:
+#   ignored automatically
+
+journald: true
+
+# ============================================================
+# WINDOWS EVENT LOG
+# ============================================================
+# On Windows:
+#   true = collect Windows Event Logs
+#
+# On Linux:
+#   ignored automatically
+
+windows_eventlog: true
+
+windows_channels:
+  - "System"
+  - "Application"
+  - "Security"
+  - "Microsoft-Windows-PowerShell/Operational"
+
+# ============================================================
+# COLLECTION SETTINGS
+# ============================================================
+
+poll_interval: 2
+
+windows_poll_interval: 5
+
+send_interval: 0.5
+
+batch_size: 100
+
+heartbeat_interval: 10
+# Durable local spool safety
+# ULPF_AGENT_MAX_SPOOL=100000 can override the queue cap.

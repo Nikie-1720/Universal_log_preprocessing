@@ -1,0 +1,17 @@
+# Vendor field -> ULPF Universal Event Schema
+source.ip:
+  src: srcip
+  type: ip
+  confidence: 1.0
+destination.ip:
+  src: dstip
+  type: ip
+  confidence: 1.0
+destination.port:
+  src: dstport
+  type: int
+  confidence: 1.0
+event.action:
+  src: action
+  type: action
+  confidence: 1.0

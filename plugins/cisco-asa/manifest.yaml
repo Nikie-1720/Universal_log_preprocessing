@@ -1,0 +1,11 @@
+id: cisco-asa-plugin
+name: Cisco ASA ULPF Plugin
+vendor: Cisco
+product: Cisco ASA
+version: "1.0.0"
+contract: ULPF-Plugin-v1
+formats:
+  - regex
+entrypoint: parser.py
+mapping_file: mappings.yaml
+test_directory: tests
