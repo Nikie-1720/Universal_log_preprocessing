@@ -89,7 +89,7 @@ Write-Host "  Python       : $($python.Command) $($python.Args -join ' ')"
 # SOURCE AGENT
 # ---------------------------------------------------------
 
-$sourceAgent = Join-Path $PSScriptRoot "..\agent"
+$sourceAgent = Join-Path $PSScriptRoot "agent"
 
 if (-not (Test-Path (Join-Path $sourceAgent "agent.py"))) {
     throw "Agent source not found: $sourceAgent"

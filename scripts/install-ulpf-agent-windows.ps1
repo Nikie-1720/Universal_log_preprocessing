@@ -85,7 +85,7 @@ Write-Host "  Python       : $pythonExe"
 #   agent\
 #   scripts\
 # Therefore scripts\..\agent is correct.
-$sourceAgent = Join-Path $PSScriptRoot "..\agent"
+$sourceAgent = Join-Path $PSScriptRoot "agent"
 
 $sourceAgent = [System.IO.Path]::GetFullPath($sourceAgent)
 
