@@ -1847,7 +1847,7 @@ function MiniTrace({ icon: Icon, label, value }) {
 function AgentSetupModal({ open, downloaded, onClose }) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("Windows-Agent");
-  const [gateway, setGateway] = useState("http://127.0.0.1:5174");
+  const [gateway, setGateway] = useState("http://127.0.0.1:5173");
   const [token, setToken] = useState("Tnikita1800");
   const [sources, setSources] = useState({ windows: true, security: true, application: true, system: true });
   if (!open) return null;
