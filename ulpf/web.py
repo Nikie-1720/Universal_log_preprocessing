@@ -2010,6 +2010,8 @@ class Handler(
                 "/api/live",
                 "/api/ready",
                 "/api/security/airgap",
+                "/api/agent-plugin/download",
+                
             }
             and not _operator_token_ok(
                 self
