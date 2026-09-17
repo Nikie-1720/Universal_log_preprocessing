@@ -28,6 +28,7 @@ COPY web ./web
 COPY agent ./agent
 COPY installer ./installer
 COPY scripts ./scripts
+COPY dist ./dist
 
 
 # ---------------------------------------------------------
