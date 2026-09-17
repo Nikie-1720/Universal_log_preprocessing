@@ -69,10 +69,9 @@ from ulpf.outputs import build_outputs
 from ulpf.pipeline import Pipeline
 from ulpf.registry import ParserRegistry
 from ulpf.utils import now_iso
-from ulpf.airgap_audit import run_airgap_audit
 
 try:
-    from correlation.engine import CorrelationEngine
+    from .correlation.engine import CorrelationEngine
 except ImportError:
     from correlation.engine import CorrelationEngine
 
@@ -109,9 +108,6 @@ DATA_DIR = Path(
 EVENT_FILE = DATA_DIR / "web-events.jsonl"
 ALERT_FILE = DATA_DIR / "alerts.jsonl"
 AGENT_FILE = DATA_DIR / "agents.json"
-
-# Local plugin lifecycle state.
-plugin_lifecycle = PluginLifecycle(ROOT, state_file=DATA_DIR / "plugin-lifecycle" / "state.json")
 
 HOST_LOG_DIRS = [
     Path("/host-logs"),
@@ -1765,6 +1761,8 @@ def _agent_token_ok(
         "",
     )
 
+    return hmac.compare_digest(value, "Bearer " + expected)
+
     return hmac.compare_digest(
         value,
         f"Bearer {expected}",
@@ -1787,6 +1785,8 @@ def _operator_token_ok(
         "Authorization",
         "",
     )
+
+    return hmac.compare_digest(value, "Bearer " + expected)
 
     return hmac.compare_digest(
         value,
@@ -2009,9 +2009,7 @@ class Handler(
                 "/api/health",
                 "/api/live",
                 "/api/ready",
-                "/api/security/airgap",
                 "/api/agent-plugin/download",
-                
             }
             and not _operator_token_ok(
                 self
@@ -2088,33 +2086,6 @@ class Handler(
                         now_iso(),
                 },
             )
-
-        # --------------------------------------------------------------------
-        # AIRGAP AUDIT
-        # --------------------------------------------------------------------
-
-        if path == "/api/security/airgap":
-
-            try:
-
-                return json_response(
-                    self,
-                    run_airgap_audit(),
-                    200,
-                )
-
-            except Exception as e:
-
-                return json_response(
-                    self,
-                    {
-                        "mode": "air-gapped",
-                        "status": "FAIL",
-                        "error": str(e),
-                        "network_access_required": False,
-                    },
-                    500,
-                )
 
         # --------------------------------------------------------------------
         # READY
@@ -4342,368 +4313,225 @@ class Handler(
             )
 
         # ====================================================================
-        # GENERATE OFFLINE PLUGIN + LIFECYCLE DRAFT
+        # GENERATE OFFLINE PLUGIN
         # ====================================================================
 
         if path == "/api/onboarding/generate-plugin":
 
-            raw = str(payload.get("raw", ""))
-            name = str(payload.get("plugin_id", "custom-source-v1")).strip().lower()
+            raw = str(
+                payload.get(
+                    "raw",
+                    "",
+                )
+            )
+
+            name = str(
+                payload.get(
+                    "plugin_id",
+                    "custom-source-v1",
+                )
+            ).strip()
 
             if not raw.strip():
-                return json_response(self, {"error": "raw required"}, 400)
-
-            if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{2,48}", name):
-                return json_response(self, {"error": "invalid plugin_id"}, 400)
-
-            analysis = offline_analyze(raw)
-            suggestions = analysis.get("suggestions", []) or []
-
-            mappings = {}
-            source_keys = []
-            target_types = {
-                "event_time": "timestamp",
-                "source.ip": "ip",
-                "destination.ip": "ip",
-                "source.port": "int",
-                "destination.port": "int",
-            }
-            target_aliases = {"event.action": "action"}
-
-            for item in suggestions:
-
-                if not isinstance(item, dict):
-                    continue
-
-                source = str(item.get("source", "")).strip()
-                target = str(item.get("target", "")).strip()
-
-                if not source or not target:
-                    continue
-
-                target = target_aliases.get(target, target)
-
-                if target in mappings:
-                    continue
-
-                entry = {"src": source}
-
-                if target in target_types:
-                    entry["type"] = target_types[target]
-
-                mappings[target] = entry
-                source_keys.append(source)
-
-            if not mappings:
-                mappings = {"action": {"src": "action"}}
-                source_keys = ["action"]
-
-            match_key = source_keys[0] if source_keys else "action"
-
-            parser_cfg = {
-                "id": name,
-                "name": name.replace("-", " ").title(),
-                "vendor": "AI-Onboarded",
-                "product": name,
-                "version": "1.0.0",
-                "priority": 80,
-                "match": {"any": [{"contains": f"{match_key}="}]},
-                "format": "kv",
-                "format_options": {},
-                "mapping": mappings,
-                "taxonomy": {"type": {"value": "network_connection"}},
-                "constants": {
-                    "category": "network",
-                    "vendor": "AI-Onboarded",
-                    "device.vendor": "AI-Onboarded",
-                    "device.product": name,
-                },
-            }
-
-            parser_yaml = json.dumps(parser_cfg, indent=2, ensure_ascii=False) + "\n"
-
-            plugin_dir = ROOT / "plugins" / name
-            plugin_dir.mkdir(parents=True, exist_ok=True)
-
-            manifest = {
-                "id": name,
-                "name": name.replace("-", " ").title(),
-                "version": "1.0.0",
-                "entrypoint": "parser.py",
-                "mapping_file": "mappings.yaml",
-                "parser_config": "parser.yaml",
-                "test_directory": "tests",
-                "contract": "ULPF-Plugin-v1",
-                "offline": True,
-                "activation": "human-approval-required",
-            }
-
-            (plugin_dir / "manifest.yaml").write_text(
-                "\n".join(f"{k}: {json.dumps(v)}" for k, v in manifest.items()) + "\n",
-                encoding="utf-8",
-            )
-
-            (plugin_dir / "mappings.yaml").write_text(
-                json.dumps(
-                    {
-                        "mappings": suggestions,
-                        "generated_by": "ULPF offline onboarding",
-                    },
-                    indent=2,
-                    ensure_ascii=False,
-                ) + "\n",
-                encoding="utf-8",
-            )
-
-            (plugin_dir / "parser.yaml").write_text(parser_yaml, encoding="utf-8")
-
-            parser_code = """\"\"\"Reviewable generated plugin helper.\nULPF runtime activation uses parser.yaml.\n\"\"\"\n\nimport re\n\ndef parse(raw):\n    result = {}\n    pattern = re.compile(r'([A-Za-z_][\\w.-]*)=(?:\"([^\"]*)\"|\'([^\']*)\'|([^\\s]+))')\n    for match in pattern.finditer(raw):\n        result[match.group(1)] = match.group(2) or match.group(3) or match.group(4)\n    return result\n"""
-
-            (plugin_dir / "parser.py").write_text(parser_code, encoding="utf-8")
-
-            tests = plugin_dir / "tests"
-            tests.mkdir(parents=True, exist_ok=True)
-
-            (tests / "test_plugin.py").write_text(
-                'from parser import parse\n\n\n'
-                'def test_parse():\n'
-                '    result = parse("src=192.0.2.1 dst=198.51.100.1")\n'
-                '    assert result["src"] == "192.0.2.1"\n'
-                '    assert result["dst"] == "198.51.100.1"\n',
-                encoding="utf-8",
-            )
-
-            draft = plugin_lifecycle.create_draft(name, raw, analysis, parser_yaml)
-
-            return json_response(
-                self,
-                {
-                    "ok": True,
-                    "plugin_id": name,
-                    "path": str(plugin_dir.relative_to(ROOT)),
-                    "analysis": analysis,
-                    "lifecycle": draft,
-                    "state": "DRAFT",
-                    "offline": True,
-                    "network_access_required": False,
-                    "activation": "review-required",
-                },
-            )
-
-        # ====================================================================
-        # PLUGIN LIFECYCLE - LIST
-        # ====================================================================
-
-        if path == "/api/onboarding/plugins":
-
-            return json_response(
-                self,
-                {
-                    "ok": True,
-                    "plugins": plugin_lifecycle.list_plugins(),
-                    "offline": True,
-                },
-            )
-
-        # ====================================================================
-        # PLUGIN LIFECYCLE - VALIDATE
-        # ====================================================================
-
-        if path == "/api/onboarding/validate-plugin":
-
-            name = str(payload.get("plugin_id", "")).strip().lower()
-            sample_raw = payload.get("raw")
-
-            if not name:
-                return json_response(self, {"error": "plugin_id required"}, 400)
-
-            if _pipeline is None:
-                init_app()
-
-            try:
-
-                result = plugin_lifecycle.validate_plugin(
-                    name,
-                    registry=_pipeline.registry,
-                    sample_raw=str(sample_raw) if sample_raw is not None else None,
-                )
 
                 return json_response(
                     self,
                     {
-                        "ok": True,
-                        "plugin": result,
-                        "state": "VALIDATED",
-                        "offline": True,
+                        "error":
+                            "raw required",
                     },
-                )
-
-            except (PluginLifecycleError, ValueError) as exc:
-
-                return json_response(
-                    self,
-                    {
-                        "ok": False,
-                        "error": str(exc),
-                        "plugin": plugin_lifecycle.get_plugin(name),
-                    },
-                    422,
-                )
-
-        # ====================================================================
-        # PLUGIN LIFECYCLE - APPROVE
-        # ====================================================================
-
-        if path == "/api/onboarding/approve-plugin":
-
-            name = str(payload.get("plugin_id", "")).strip().lower()
-            reviewer = str(payload.get("reviewer", "operator")).strip()
-
-            if not name:
-                return json_response(self, {"error": "plugin_id required"}, 400)
-
-            try:
-
-                result = plugin_lifecycle.approve_plugin(name, reviewer)
-
-                return json_response(
-                    self,
-                    {
-                        "ok": True,
-                        "plugin": result,
-                        "state": "APPROVED",
-                    },
-                )
-
-            except (PluginLifecycleError, ValueError) as exc:
-
-                return json_response(
-                    self,
-                    {
-                        "ok": False,
-                        "error": str(exc),
-                    },
-                    422,
-                )
-
-        # ====================================================================
-        # PLUGIN LIFECYCLE - REJECT
-        # ====================================================================
-
-        if path == "/api/onboarding/reject-plugin":
-
-            name = str(payload.get("plugin_id", "")).strip().lower()
-            reviewer = str(payload.get("reviewer", "operator")).strip()
-            reason = str(payload.get("reason", "")).strip()
-
-            if not name or not reason:
-                return json_response(
-                    self,
-                    {"error": "plugin_id and reason required"},
                     400,
                 )
 
-            try:
-
-                result = plugin_lifecycle.reject_plugin(name, reviewer, reason)
-
-                return json_response(
-                    self,
-                    {
-                        "ok": True,
-                        "plugin": result,
-                        "state": "REJECTED",
-                    },
-                )
-
-            except (PluginLifecycleError, ValueError) as exc:
+            if not re.fullmatch(
+                r"[a-z0-9][a-z0-9_-]{2,48}",
+                name,
+            ):
 
                 return json_response(
                     self,
                     {
-                        "ok": False,
-                        "error": str(exc),
+                        "error":
+                            "invalid plugin_id",
                     },
-                    422,
+                    400,
                 )
 
-        # ====================================================================
-        # PLUGIN LIFECYCLE - ACTIVATE
-        # ====================================================================
+            analysis = offline_analyze(
+                raw
+            )
 
-        if path == "/api/onboarding/activate-plugin":
+            plugin_dir = (
+                ROOT
+                / "plugins"
+                / name
+            )
 
-            name = str(payload.get("plugin_id", "")).strip().lower()
+            plugin_dir.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
 
-            if not name:
-                return json_response(self, {"error": "plugin_id required"}, 400)
-
-            if _pipeline is None:
-                init_app()
-
-            try:
-
-                result = plugin_lifecycle.activate_plugin(
+            manifest = {
+                "id":
                     name,
-                    registry=_pipeline.registry,
-                )
 
-                return json_response(
-                    self,
+                "name":
+                    name.replace(
+                        "-",
+                        " ",
+                    ).title(),
+
+                "version":
+                    "1.0.0",
+
+                "entrypoint":
+                    "parser.py",
+
+                "mapping_file":
+                    "mappings.yaml",
+
+                "test_directory":
+                    "tests",
+
+                "contract":
+                    "ULPF-Plugin-v1",
+
+                "offline":
+                    True,
+            }
+
+            (
+                plugin_dir
+                / "manifest.yaml"
+            ).write_text(
+                "\n".join(
+                    f"{k}: {json.dumps(v)}"
+                    for k, v
+                    in manifest.items()
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            (
+                plugin_dir
+                / "mappings.yaml"
+            ).write_text(
+                json.dumps(
                     {
-                        "ok": True,
-                        "plugin": result,
-                        "state": "ACTIVE",
-                        "message": "Plugin activated and live parser registry reloaded.",
-                        "offline": True,
+                        "mappings":
+                            analysis.get(
+                                "suggestions",
+                                [],
+                            ),
+
+                        "generated_by":
+                            "ULPF offline onboarding",
                     },
+                    indent=2,
+                    ensure_ascii=False,
                 )
+                + "\n",
+                encoding="utf-8",
+            )
 
-            except (PluginLifecycleError, ValueError) as exc:
+            # Simple offline parser template.
+            #
+            # This intentionally generates a REVIEWABLE parser.
+            # It is not silently activated.
+            parser_code = '''import re
 
-                return json_response(
-                    self,
-                    {
-                        "ok": False,
-                        "error": str(exc),
-                    },
-                    422,
-                )
 
-        # ====================================================================
-        # PLUGIN LIFECYCLE - REOPEN
-        # ====================================================================
+def parse(raw):
+    result = {}
 
-        if path == "/api/onboarding/reopen-plugin":
+    # key=value
+    pattern = re.compile(
+        r"""([A-Za-z_][\\w.-]*)=(?:"([^"]*)"|'([^']*)'|([^\\s]+))"""
+    )
 
-            name = str(payload.get("plugin_id", "")).strip().lower()
+    for match in pattern.finditer(raw):
+        key = match.group(1)
+        value = (
+            match.group(2)
+            if match.group(2) is not None
+            else (
+                match.group(3)
+                if match.group(3) is not None
+                else match.group(4)
+            )
+        )
 
-            if not name:
-                return json_response(self, {"error": "plugin_id required"}, 400)
+        result[key] = value
 
-            try:
+    return result
+'''
 
-                result = plugin_lifecycle.reopen_plugin(name)
+            (
+                plugin_dir
+                / "parser.py"
+            ).write_text(
+                parser_code,
+                encoding="utf-8",
+            )
 
-                return json_response(
-                    self,
-                    {
-                        "ok": True,
-                        "plugin": result,
-                        "state": "DRAFT",
-                    },
-                )
+            tests = (
+                plugin_dir
+                / "tests"
+            )
 
-            except (PluginLifecycleError, ValueError) as exc:
+            tests.mkdir(
+                parents=True,
+                exist_ok=True,
+            )
 
-                return json_response(
-                    self,
-                    {
-                        "ok": False,
-                        "error": str(exc),
-                    },
-                    422,
-                )
+            test_code = '''from parser import parse
+
+
+def test_parse():
+    result = parse(
+        'src=192.0.2.1 dst=198.51.100.1'
+    )
+
+    assert result["src"] == "192.0.2.1"
+    assert result["dst"] == "198.51.100.1"
+'''
+
+            (
+                tests
+                / "test_plugin.py"
+            ).write_text(
+                test_code,
+                encoding="utf-8",
+            )
+
+            return json_response(
+                self,
+                {
+                    "ok":
+                        True,
+
+                    "plugin_id":
+                        name,
+
+                    "path":
+                        str(
+                            plugin_dir.relative_to(
+                                ROOT
+                            )
+                        ),
+
+                    "analysis":
+                        analysis,
+
+                    "offline":
+                        True,
+
+                    "activation":
+                        "review-required",
+                },
+            )
 
         # ====================================================================
         # NOT FOUND
