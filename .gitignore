@@ -2,7 +2,9 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 build/
-dist/
+dist/*
+!dist/
+!dist/ULPF-Agent-Plugin.zip
 .eggs/
 data/
 wheelhouse/
