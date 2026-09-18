@@ -119,9 +119,10 @@ Copy-Item `
     -Force
 
 $agentPath = Join-Path $targetAgent "agent.py"
+$serviceHostPath = Join-Path $targetAgent "windows_service.py"
 
 if (-not (Test-Path $agentPath)) {
-    throw "Installed agent.py not found: $agentPath"
+    throw "Windows service host not found: $serviceHostPath"
 }
 
 $configPath = Join-Path $DataDir "agent.yaml"
@@ -165,6 +166,7 @@ Set-Content `
     -Encoding UTF8
 
 Write-Host "  Agent        : $agentPath"
+Write-Host "  Service host : $serviceHostPath"
 Write-Host "  Config       : $configPath"
 
 $manifest = @{
@@ -222,7 +224,7 @@ else {
 
     Write-Host "  Creating Windows service..."
 
-    $serviceBinary = "`"$pythonExe`" `"$agentPath`" --config `"$configPath`""
+    $serviceBinary = "`"$pythonExe`" `"$serviceHostPath`" --config `"$configPath`""
 
     try {
 

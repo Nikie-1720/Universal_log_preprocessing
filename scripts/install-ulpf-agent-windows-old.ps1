@@ -223,6 +223,7 @@ if (-not $NoService) {
     $pythonExe = $pythonExe.Trim()
 
     $agentPath = Join-Path $targetAgent "agent.py"
+    $serviceHostPath = Join-Path $targetAgent "windows_service.py"
 
     # Validate everything before touching Windows SCM.
     if (-not (Test-Path $pythonExe)) {
@@ -233,12 +234,17 @@ if (-not $NoService) {
         throw "Agent script not found: $agentPath"
     }
 
+    if (-not (Test-Path $serviceHostPath)) {
+        throw "Windows service host not found: $serviceHostPath"
+    }
+
     if (-not (Test-Path $configPath)) {
         throw "Agent configuration not found: $configPath"
     }
 
     Write-Host "  Python       : $pythonExe"
     Write-Host "  Agent        : $agentPath"
+    Write-Host "  Service host : $serviceHostPath"
     Write-Host "  Config       : $configPath"
     Write-Host "  Service      : $ServiceName"
 
@@ -246,7 +252,7 @@ if (-not $NoService) {
     # Build service command
     # -----------------------------------------------------
 
-    $binPath = "`"$pythonExe`" `"$agentPath`" --config `"$configPath`""
+    $binPath = "`"$pythonExe`" `"$serviceHostPath`" --config `"$configPath`""
 
     Write-Host ""
     Write-Host "  Service command:" -ForegroundColor DarkGray

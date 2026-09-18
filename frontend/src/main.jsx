@@ -1261,7 +1261,7 @@ function AirGapProof({ airgap }) {
         <div className="airgap-node">
           <ShieldCheck size={18} />
           <b>ULPF Gateway</b>
-          <small>127.0.0.1:5174</small>
+          <small>127.0.0.1:5173</small>
         </div>
 
         <div className="airgap-blocked">
@@ -1883,7 +1883,7 @@ function AgentSetupModal({ open, downloaded, onClose }) {
             <div className="setup-step">
               <div className="setup-icon"><Terminal size={24}/></div>
               <h3>Run the Windows installer</h3>
-              <p>Extract the ZIP and run <code>installer\Install-ULPF-Agent.cmd</code>. Windows opens the installer window and creates the <code>ULPFAgent</code> service.</p>
+              <p>Extract the ZIP and run <code>Install-ULPF-Agent.cmd</code>. Windows opens the installer window and creates the <code>ULPFAgent</code> service.</p>
               <div className="setup-check"><CheckCircle2 size={16}/> Install to Program Files + ProgramData</div>
             </div>
           )}

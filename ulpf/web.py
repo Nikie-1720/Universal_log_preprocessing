@@ -812,6 +812,15 @@ def notify_external(
     if not url:
         return
 
+    # Count only outbound HTTP calls initiated by ULPF itself.
+    _airgap_runtime["external_requests"] += 1
+    try:
+        host = urlparse(url).hostname or ""
+        if host and host.lower() not in {"localhost", "127.0.0.1", "::1"} and not host.startswith(("10.", "192.168.", "172.")):
+            _airgap_runtime["cloud_api_calls"] += 1
+    except ValueError:
+        pass
+
     body = json.dumps(
         alert,
         ensure_ascii=False,
@@ -1951,6 +1960,76 @@ def json_response(
 
 
 # ============================================================================
+# AIR-GAP SECURITY STATUS
+# ============================================================================
+
+_airgap_runtime = {
+    "external_requests": 0,
+    "cloud_api_calls": 0,
+    "external_dns_requests": 0,
+}
+
+
+def _airgap_status():
+    """Return a truthful local runtime air-gap status.
+
+    This reports ULPF-controlled external configuration and outbound calls.
+    It is not an OS-wide packet/DNS monitor.
+    """
+    external_endpoints = []
+    config_candidates = [
+        ROOT / "configs",
+        ROOT / "agent" / "agent.yaml",
+        ROOT / "docker-compose.yml",
+        ROOT / ".env.example",
+    ]
+    allowed_hosts = {"localhost", "127.0.0.1", "::1", "postgres", "kafka", "elasticsearch"}
+
+    import re
+    for cfg in config_candidates:
+        if not cfg.exists() or not cfg.is_file():
+            if cfg.is_dir():
+                try:
+                    files = list(cfg.rglob("*"))[:500]
+                except OSError:
+                    files = []
+            else:
+                files = []
+        else:
+            files = [cfg]
+        for item in files:
+            if not item.is_file():
+                continue
+            try:
+                text = item.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            for match in re.finditer(r'https?://([^/\s"\']+)', text, re.I):
+                host = match.group(1).split(":", 1)[0].lower()
+                if host not in allowed_hosts and not host.startswith(("10.", "192.168.", "172.")):
+                    if host not in external_endpoints:
+                        external_endpoints.append(host)
+
+    external_count = len(external_endpoints)
+    network_required = external_count > 0 or bool(os.environ.get("ULPF_ALERT_WEBHOOK", "").strip())
+    status = "PASS" if not network_required else "WARN"
+
+    return {
+        "status": status,
+        "external_endpoints": external_count,
+        "cloud_api_calls": _airgap_runtime["cloud_api_calls"],
+        "external_requests": _airgap_runtime["external_requests"],
+        "external_dns_requests": _airgap_runtime["external_dns_requests"],
+        "network_access_required": network_required,
+        "mode": "air-gapped" if not network_required else "private-network",
+        "audit": {
+            "performed_offline": True,
+            "scope": "ULPF runtime/configuration",
+        },
+    }
+
+
+# ============================================================================
 # HTTP HANDLER
 # ============================================================================
 
@@ -2009,7 +2088,6 @@ class Handler(
                 "/api/health",
                 "/api/live",
                 "/api/ready",
-                "/api/agent-plugin/download",
             }
             and not _operator_token_ok(
                 self
@@ -2029,6 +2107,15 @@ class Handler(
                         "operator authentication required",
                 },
                 401,
+            )
+
+        # --------------------------------------------------------------------
+        # AIR-GAP SECURITY STATUS
+        # --------------------------------------------------------------------
+        if path == "/api/security/airgap":
+            return json_response(
+                self,
+                _airgap_status(),
             )
 
         # --------------------------------------------------------------------
